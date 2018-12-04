@@ -23,6 +23,9 @@ class ViewGenerator extends BaseGenerator
     /** @var array */
     private $htmlFields;
 
+    /** @var boolean */
+    private $isMultipart = false;
+
     public function __construct(CommandData $commandData)
     {
         $this->commandData = $commandData;
@@ -302,6 +305,9 @@ class ViewGenerator extends BaseGenerator
             $fieldTemplate = HTMLFieldGenerator::generateHTML($field, $this->templateType);
 
             if (!empty($fieldTemplate)) {
+                if ('file' === $field->htmlType) {
+                    $this->isMultipart = true;
+                }
                 $fieldTemplate = fill_template_with_field_data(
                     $this->commandData->dynamicVars,
                     $this->commandData->fieldNamesMapping,
@@ -327,6 +333,8 @@ class ViewGenerator extends BaseGenerator
 
         $templateData = fill_template($this->commandData->dynamicVars, $templateData);
 
+        $templateData = str_replace('$IS_MULTIPART$', $this->isMultipart ? 'true' : 'false', $templateData);
+
         FileUtil::createFile($this->path, 'create.blade.php', $templateData);
         $this->commandData->commandInfo('create.blade.php created');
     }
@@ -336,6 +344,8 @@ class ViewGenerator extends BaseGenerator
         $templateData = get_template('scaffold.views.edit', $this->templateType);
 
         $templateData = fill_template($this->commandData->dynamicVars, $templateData);
+
+        $templateData = str_replace('$IS_MULTIPART$', $this->isMultipart ? 'true' : 'false', $templateData);
 
         FileUtil::createFile($this->path, 'edit.blade.php', $templateData);
         $this->commandData->commandInfo('edit.blade.php created');
